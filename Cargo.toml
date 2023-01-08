@@ -1,0 +1,8 @@
+[package]
+name = "t"
+version = "0.1.0"
+authors = ["Julian Wogersien <julian.wogersien@gmail.com>"]
+
+[dependencies]
+sfml = "0.19.0"
+rand = "0.8.5"
