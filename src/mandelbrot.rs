@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use sfml::{graphics::{Drawable, Sprite, Image, Texture, Rect}, SfBox, system::Vector2i};
+use sfml::{graphics::{Drawable, Sprite, Image, Texture, Rect, Color}, SfBox, system::Vector2i};
 
 use crate::math::math;
 
@@ -11,7 +11,7 @@ pub struct Mandelbrot {
 
 impl Mandelbrot {
     pub fn new(size_x: i32, size_y: i32) -> Self {
-        let t: Image = Image::new(size_x.try_into().unwrap(), size_y.try_into().unwrap());
+        let mut t: Image = Image::new(size_x.try_into().unwrap(), size_y.try_into().unwrap());
         let mut tex: SfBox<Texture> = match Texture::new() {
             Some(x) =>x,
             None => panic!("error creating texture"),
@@ -21,7 +21,7 @@ impl Mandelbrot {
             Err(_) => panic!("error loading texture from image"),
         };
         for i in 0..size_x {
-            for _j in 0..size_y {
+            for j in 0..size_y {
                 let x0: f32 = math::scale(size_x as f32, 0.0, -2.0, 0.47, i as f32);
                 let y0: f32 = math::scale(size_y as f32, 0.0, -1.12, 1.12, i as f32);
                 let mut x: f32 = 0.0;
@@ -34,7 +34,32 @@ impl Mandelbrot {
                     x = xtemp;
                     iteration += 1;
                 }
-                
+                let mut rgb: (u8, u8, u8) = (Color::BLACK.r, Color::BLACK.g, Color::BLACK.b);
+                if iteration < max_iteration && iteration > 0 {
+                    let l: i32 = iteration % 16;
+                    rgb = match l {
+                        0 => (66, 30, 15),
+                        1 => (25, 7, 26),
+                        2 => (9, 1, 47),
+                        3 => (4, 4, 73),
+                        4 => (0, 7, 100),
+                        5 => (12, 44, 138),
+                        6 => (24, 82, 177),
+                        7 => (57, 125, 209),
+                        8 => (134, 181, 229),
+                        9 => (211, 236, 248),
+                        10 => (241, 233, 191),
+                        11 => (248, 201, 0),
+                        12 => (255, 170, 0),
+                        13 => (204, 128, 0),
+                        14 => (153, 87, 0),
+                        15 => (106, 52, 3),
+                        _ => (66, 30, 15),
+                    }
+                }
+                unsafe {
+                    t.set_pixel(i as u32, j as u32, Color::rgb(rgb.0.try_into().unwrap(), rgb.1.try_into().unwrap(), rgb.2.try_into().unwrap()));
+                }
             }
         }
 
