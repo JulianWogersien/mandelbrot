@@ -1,2 +1,2 @@
-# trg
-small thing written in rust
+# mandelbrot
+mandelbrot set visualization written in rust
