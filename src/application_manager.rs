@@ -13,7 +13,7 @@ pub mod gman {
 
     impl Gm {
         pub fn new() -> Self {
-            let mut window: RenderWindow = RenderWindow::new((800, 600), "window", Style::CLOSE, &Default::default());
+            let mut window: RenderWindow = RenderWindow::new((1920, 1080), "window", Style::FULLSCREEN, &Default::default());
             window.set_framerate_limit(60);
             window.set_vertical_sync_enabled(true);
             let gm: Gm = Gm {
@@ -33,6 +33,12 @@ pub mod gman {
                 while let Some(event) = self.window.poll_event() {
                     match event {
                         Event::Closed => self.window.close(),
+                        Event::KeyPressed { code: Key::Escape, alt: false, ctrl: false, shift: false, system: false } => self.window.close(),
+                        Event::KeyReleased { code, ..} => {
+                            if code == Key::R {
+                                
+                            }
+                        }
                         _ => {}
                     }
                 }

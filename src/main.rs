@@ -1,6 +1,7 @@
 use application_manager::gman::Gm;
 
 extern crate sfml;
+extern crate num;
 
 mod application_manager;
 mod io;

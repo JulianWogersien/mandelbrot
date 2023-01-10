@@ -1,12 +1,12 @@
 use std::convert::TryInto;
 
+use num::{Complex, complex::ComplexFloat};
 use sfml::{graphics::{Drawable, Sprite, Image, Texture, Rect, Color}, SfBox, system::Vector2i};
-
-use crate::math::math;
 
 pub struct Mandelbrot {
     pixels: sfml::graphics::Image,
     tex: SfBox<Texture>,
+    max_iter: i32,
 }
 
 impl Mandelbrot {
@@ -20,23 +20,20 @@ impl Mandelbrot {
             Ok(_) => (),
             Err(_) => panic!("error loading texture from image"),
         };
+
         for i in 0..size_x {
             for j in 0..size_y {
-                let x0: f32 = math::scale(size_x as f32, 0.0, -2.0, 0.47, i as f32);
-                let y0: f32 = math::scale(size_y as f32, 0.0, -1.12, 1.12, i as f32);
-                let mut x: f32 = 0.0;
-                let mut y: f32 = 0.0;
-                let mut iteration: i32 = 0;
-                let max_iteration: i32 = 1000;
-                while x*x + y*y <= 2.*2. && iteration < max_iteration {
-                    let xtemp: f32 = x*x - y*y + x0;
-                    y = 2.*x*y + y0;
-                    x = xtemp;
-                    iteration += 1;
-                }
+                #[allow(non_snake_case)]
+                let MAX_ITER: i32 = 80;
+                let c: Complex<f64> = num::complex::Complex::new(-2.0 + (i as f64 / size_x as f64) * (1.0 - -2.0), -1.0 + (j as f64 / size_y as f64) * (1.0 - -1.0));
+                
+                let n: f64 = Mandelbrot::run_mandelbrot(100, c);
+
+                //let color: Color = Color::rgba(0, 0, 0, (255.0 - n * 255.0 / MAX_ITER as f32) as u8);
+
                 let mut rgb: (u8, u8, u8) = (Color::BLACK.r, Color::BLACK.g, Color::BLACK.b);
-                if iteration < max_iteration && iteration > 0 {
-                    let l: i32 = iteration % 16;
+                if n < MAX_ITER as f64 && n > 0.0 {
+                    let l: i32 = (n % 16.0) as i32;
                     rgb = match l {
                         0 => (66, 30, 15),
                         1 => (25, 7, 26),
@@ -57,13 +54,24 @@ impl Mandelbrot {
                         _ => (66, 30, 15),
                     }
                 }
+                let color: Color = Color::rgb(rgb.0, rgb.1, rgb.2);
                 unsafe {
-                    t.set_pixel(i as u32, j as u32, Color::rgb(rgb.0.try_into().unwrap(), rgb.1.try_into().unwrap(), rgb.2.try_into().unwrap()));
+                    t.set_pixel(i as u32, j as u32, color);
                 }
             }
         }
 
-        return Mandelbrot { pixels: t, tex };
+        return Mandelbrot { pixels: t, tex, max_iter: 100};
+    }
+
+    fn run_mandelbrot(max_iter: i32, num: Complex<f64>) -> f64 {
+        let mut z: Complex<f64> = Complex { re: 0.0, im: 0.0 };
+        let mut n: f64 = 0.0;
+        while z.abs() <= 2.0 && n < max_iter as f64 {
+            z = z*z + num;
+            n += 1.0;
+        }
+        return n + 1.0 - z.abs().ln().ln() / 2.0.ln();
     }
 
     pub fn prepare_for_render(&mut self) {
