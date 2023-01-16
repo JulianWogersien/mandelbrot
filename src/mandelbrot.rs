@@ -1,4 +1,5 @@
 use std::convert::TryInto;
+use std::thread;
 
 use num::{Complex, complex::ComplexFloat};
 use sfml::{graphics::{Drawable, Sprite, Image, Texture, Rect, Color}, SfBox, system::Vector2i};
@@ -20,11 +21,15 @@ impl Mandelbrot {
             Ok(_) => (),
             Err(_) => panic!("error loading texture from image"),
         };
+        
+        let max_workers: i32 = 16;
+        let mut workers = Vec::new();
 
         for i in 0..size_x {
             for j in 0..size_y {
+                
                 #[allow(non_snake_case)]
-                let MAX_ITER: i32 = 80;
+                let max_iter: i32 = 80;
                 let c: Complex<f64> = num::complex::Complex::new(-2.0 + (i as f64 / size_x as f64) * (1.0 - -2.0), -1.0 + (j as f64 / size_y as f64) * (1.0 - -1.0));
                 
                 let n: f64 = Mandelbrot::run_mandelbrot(100, c);
@@ -32,7 +37,7 @@ impl Mandelbrot {
                 //let color: Color = Color::rgba(0, 0, 0, (255.0 - n * 255.0 / MAX_ITER as f32) as u8);
 
                 let mut rgb: (u8, u8, u8) = (Color::BLACK.r, Color::BLACK.g, Color::BLACK.b);
-                if n < MAX_ITER as f64 && n > 0.0 {
+                if n < max_iter as f64 && n > 0.0 {
                     let l: i32 = (n % 16.0) as i32;
                     rgb = match l {
                         0 => (66, 30, 15),
