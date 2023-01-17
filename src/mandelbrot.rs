@@ -24,16 +24,21 @@ impl Mandelbrot {
         
         let max_workers: i32 = 16;
         let mut workers = Vec::new();
+        let mut results = Vec::new();
 
         for i in 0..size_x {
             for j in 0..size_y {
+                if workers.len() != max_workers - 1 {
+                    workers.push(thread::spawn(move || {
+                        let max_iter: i32 = 80;
+                        let c: Complex<f64> = num::complex::Complex::new(-2.0 + (i as f64 / size_x as f64) * (1.0 - -2.0), -1.0 + (j as f64 / size_y as f64) * (1.0 - -1.0));
                 
-                #[allow(non_snake_case)]
-                let max_iter: i32 = 80;
-                let c: Complex<f64> = num::complex::Complex::new(-2.0 + (i as f64 / size_x as f64) * (1.0 - -2.0), -1.0 + (j as f64 / size_y as f64) * (1.0 - -1.0));
-                
-                let n: f64 = Mandelbrot::run_mandelbrot(100, c);
+                        let n: f64 = Mandelbrot::run_mandelbrot(100, c);
+                        return (i, j, n)
+                    }));
+                }
 
+                let max_iter: i32 = 80;
                 //let color: Color = Color::rgba(0, 0, 0, (255.0 - n * 255.0 / MAX_ITER as f32) as u8);
 
                 let mut rgb: (u8, u8, u8) = (Color::BLACK.r, Color::BLACK.g, Color::BLACK.b);
