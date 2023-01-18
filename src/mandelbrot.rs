@@ -21,56 +21,64 @@ impl Mandelbrot {
             Err(_) => panic!("error loading texture from image"),
         };
         
-        let mut workers: Vec<thread::JoinHandle<(i32, i32, f64)>> = Vec::new();
-        let mut results: Vec<(i32, i32, f64)> = Vec::new();
+        let max_worker: i32 = 8;
+        let mut workers: Vec<thread::JoinHandle<Vec<(i32, i32, f64)>>> = Vec::new();
+        let mut results: Vec<Vec<(i32, i32, f64)>> = Vec::new();
 
-        for i in 0..size_x {
-            for j in 0..size_y {
-                workers.push(thread::spawn(move || {
-                    let max_iter: i32 = 80;
-                    let c: Complex<f64> = num::complex::Complex::new(-2.0 + (i as f64 / size_x as f64) * (1.0 - -2.0), -1.0 + (j as f64 / size_y as f64) * (1.0 - -1.0));
-            
-                    let n: f64 = Mandelbrot::run_mandelbrot(max_iter, c);
-                    return (i, j, n)
-                }));
-            }
+        for i in 1..max_worker {
+            workers.push(thread::spawn(move || {
+                let max_x: i32 = i * (size_x / max_worker);
+                let mut results: Vec<(i32, i32, f64)> = Vec::new();
+                for x in 0..max_x {
+                    for y in 0..size_y {
+                        let max_iter: i32 = 80;
+                        let c: Complex<f64> = num::complex::Complex::new(-2.0 + (x as f64 / max_x as f64) * (1.0 - -2.0), -1.0 + (y as f64 / size_y as f64) * (1.0 - -1.0));
+        
+                        let n: f64 = Mandelbrot::run_mandelbrot(max_iter, c);
+                        results.push((x, y, n));
+                    }
+                }
+                return results
+            }))            
         }
         
         workers.into_iter().for_each(|worker| results.push(worker.join().unwrap()));
 
-        for k in results {
-            let max_iter: i32 = 80;
-            let i: i32 = k.0;
-            let j: i32 = k.1;
-            let n: f64 = k.2;
-            //let color: Color = Color::rgba(0, 0, 0, (255.0 - n * 255.0 / MAX_ITER as f32) as u8);
+        for i in results {
+            for j in i {
+                let max_iter: i32 = 80;
+                let x: i32 = j.0;
+                let y: i32 = j.1;
+                let n: f64 = j.2;
+                //let color: Color = Color::rgba(0, 0, 0, (255.0 - n * 255.0 / MAX_ITER as f32) as u8);
 
-            let mut rgb: (u8, u8, u8) = (Color::BLACK.r, Color::BLACK.g, Color::BLACK.b);
-            if n < max_iter as f64 && n > 0.0 {
-                let l: i32 = (n % 16.0) as i32;
-                rgb = match l {
-                0 => (66, 30, 15),
-                1 => (25, 7, 26),
-                2 => (9, 1, 47),
-                3 => (4, 4, 73),
-                4 => (0, 7, 100),
-                5 => (12, 44, 138),
-                6 => (24, 82, 177),
-                7 => (57, 125, 209),
-                8 => (134, 181, 229),
-                9 => (211, 236, 248),
-                10 => (241, 233, 191),
-                11 => (248, 201, 0),
-                12 => (255, 170, 0),
-                13 => (204, 128, 0),
-                14 => (153, 87, 0),
-                15 => (106, 52, 3),
-                _ => (66, 30, 15),
+                let mut rgb: (u8, u8, u8) = (Color::BLACK.r, Color::BLACK.g, Color::BLACK.b);
+                if n < max_iter as f64 && n > 0.0 {
+                    let l: i32 = (n % 16.0) as i32;
+                    rgb = match l {
+                    0 => (66, 30, 15),
+                    1 => (25, 7, 26),
+                    2 => (9, 1, 47),
+                    3 => (4, 4, 73),
+                    4 => (0, 7, 100),
+                    5 => (12, 44, 138),
+                    6 => (24, 82, 177),
+                    7 => (57, 125, 209),
+                    8 => (134, 181, 229),
+                    9 => (211, 236, 248),
+                    10 => (241, 233, 191),
+                    11 => (248, 201, 0),
+                    12 => (255, 170, 0),
+                    13 => (204, 128, 0),
+                    14 => (153, 87, 0),
+                    15 => (106, 52, 3),
+                    _ => (66, 30, 15),
+                    }
                 }
-            }
-            let color: Color = Color::rgb(rgb.0, rgb.1, rgb.2);
-            unsafe {
-                t.set_pixel(i as u32, j as u32, color);
+                let color: Color = Color::rgb(rgb.0, rgb.1, rgb.2);
+                unsafe {
+                    t.set_pixel(x as u32, y as u32, color);
+                }
             }
         }
 
