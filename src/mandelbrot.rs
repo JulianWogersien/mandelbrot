@@ -7,7 +7,6 @@ use sfml::{graphics::{Drawable, Sprite, Image, Texture, Rect, Color}, SfBox, sys
 pub struct Mandelbrot {
     pixels: sfml::graphics::Image,
     tex: SfBox<Texture>,
-    max_iter: i32,
 }
 
 impl Mandelbrot {
@@ -22,35 +21,23 @@ impl Mandelbrot {
             Err(_) => panic!("error loading texture from image"),
         };
         
-        let max_workers: i32 = 16;
         let mut workers: Vec<thread::JoinHandle<(i32, i32, f64)>> = Vec::new();
         let mut results: Vec<(i32, i32, f64)> = Vec::new();
 
         for i in 0..size_x {
             for j in 0..size_y {
-                if workers.len() != max_workers.try_into().unwrap() {
-                    workers.push(thread::spawn(move || {
-                        let max_iter: i32 = 80;
-                        let c: Complex<f64> = num::complex::Complex::new(-2.0 + (i as f64 / size_x as f64) * (1.0 - -2.0), -1.0 + (j as f64 / size_y as f64) * (1.0 - -1.0));
-                
-                        let n: f64 = Mandelbrot::run_mandelbrot(max_iter, c);
-                        return (i, j, n)
-                    }));
-                }
-                for thread in &workers {
-                    let r: bool = thread.is_finished();
-                    if r {
-                        results.push(
-                            match thread.join() {
-                                Ok(v) => v,
-                                Err(e) => {println!("error: {:?}", e); (0, 0, 0.0)},
-                            }
-                        )
-                    }
-                }
+                workers.push(thread::spawn(move || {
+                    let max_iter: i32 = 80;
+                    let c: Complex<f64> = num::complex::Complex::new(-2.0 + (i as f64 / size_x as f64) * (1.0 - -2.0), -1.0 + (j as f64 / size_y as f64) * (1.0 - -1.0));
+            
+                    let n: f64 = Mandelbrot::run_mandelbrot(max_iter, c);
+                    return (i, j, n)
+                }));
             }
         }
         
+        workers.into_iter().for_each(|worker| results.push(worker.join().unwrap()));
+
         for k in results {
             let max_iter: i32 = 80;
             let i: i32 = k.0;
@@ -87,7 +74,7 @@ impl Mandelbrot {
             }
         }
 
-        return Mandelbrot { pixels: t, tex, max_iter: 100};
+        return Mandelbrot { pixels: t, tex};
     }
 
     fn run_mandelbrot(max_iter: i32, num: Complex<f64>) -> f64 {
