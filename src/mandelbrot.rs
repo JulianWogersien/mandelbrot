@@ -40,7 +40,12 @@ impl Mandelbrot {
                 for thread in &workers {
                     let r: bool = thread.is_finished();
                     if r {
-                        results.push(thread.join().unwrap())
+                        results.push(
+                            match thread.join() {
+                                Ok(v) => v,
+                                Err(e) => {println!("error: {:?}", e); (0, 0, 0.0)},
+                            }
+                        )
                     }
                 }
             }
