@@ -21,18 +21,19 @@ impl Mandelbrot {
             Err(_) => panic!("error loading texture from image"),
         };
         
-        let max_worker: i32 = 8;
+        let max_worker: i32 = 2;
         let mut workers: Vec<thread::JoinHandle<Vec<(i32, i32, f64)>>> = Vec::new();
         let mut results: Vec<Vec<(i32, i32, f64)>> = Vec::new();
 
-        for i in 1..max_worker {
+        for i in 0..max_worker {
             workers.push(thread::spawn(move || {
-                let max_x: i32 = i * (size_x / max_worker);
+                let max_x: i32 = (i+1) * (size_x / max_worker);
                 let mut results: Vec<(i32, i32, f64)> = Vec::new();
-                for x in 0..max_x {
+                println!("max_x: {}", max_x);
+                for x in (size_x / max_worker) * i..max_x {
                     for y in 0..size_y {
                         let max_iter: i32 = 80;
-                        let c: Complex<f64> = num::complex::Complex::new(-2.0 + (x as f64 / max_x as f64) * (1.0 - -2.0), -1.0 + (y as f64 / size_y as f64) * (1.0 - -1.0));
+                        let c: Complex<f64> = num::complex::Complex::new(-2.0 + (x as f64 / size_x as f64) * (1.0 - -2.0), -1.0 + (y as f64 / size_y as f64) * (1.0 - -1.0));
         
                         let n: f64 = Mandelbrot::run_mandelbrot(max_iter, c);
                         results.push((x, y, n));
