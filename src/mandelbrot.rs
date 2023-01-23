@@ -4,6 +4,8 @@ use std::thread;
 use num::{Complex, complex::ComplexFloat};
 use sfml::{graphics::{Drawable, Sprite, Image, Texture, Rect, Color}, SfBox, system::Vector2i};
 
+use crate::math::math;
+
 pub struct Mandelbrot {
     pixels: sfml::graphics::Image,
     tex: SfBox<Texture>,
@@ -40,7 +42,7 @@ impl Mandelbrot {
                     }
                 }
                 return results
-            }))            
+            })) 
         }
         
         workers.into_iter().for_each(|worker| results.push(worker.join().unwrap()));
@@ -51,9 +53,9 @@ impl Mandelbrot {
                 let x: i32 = j.0;
                 let y: i32 = j.1;
                 let n: f64 = j.2;
-                //let color: Color = Color::rgba(0, 0, 0, (255.0 - n * 255.0 / MAX_ITER as f32) as u8);
+                let color: Color = Color::rgba(0, 0, 0, (255.0 - n * 255.0 / max_iter as f64) as u8);
 
-                let mut rgb: (u8, u8, u8) = (Color::BLACK.r, Color::BLACK.g, Color::BLACK.b);
+                /*let mut rgb: (u8, u8, u8) = (Color::BLACK.r, Color::BLACK.g, Color::BLACK.b);
                 if n < max_iter as f64 && n > 0.0 {
                     let l: i32 = (n % 16.0) as i32;
                     rgb = match l {
@@ -75,8 +77,8 @@ impl Mandelbrot {
                     15 => (106, 52, 3),
                     _ => (66, 30, 15),
                     }
-                }
-                let color: Color = Color::rgb(rgb.0, rgb.1, rgb.2);
+                }*/
+                //let color: Color = Color::rgb(rgb.0, rgb.1, rgb.2);
                 unsafe {
                     t.set_pixel(x as u32, y as u32, color);
                 }
@@ -84,6 +86,20 @@ impl Mandelbrot {
         }
 
         return Mandelbrot { pixels: t, tex};
+    }
+
+    fn map_color(di: f64, r: f64, c: f64) -> (i32, i32, i32) {
+        let mut zn: f64 = 0.0;
+        let mut hue: f64 = 0.0;
+
+        zn = (r + c).sqrt();
+        hue = di + 1.0 - zn.abs().ln().ln() / (2.0).ln();
+        hue = 0.95 + 20.0 * hue;
+        while hue > 360.0
+        {hue -= 360.0;}
+        while hue < 0.0
+            {hue += 360.0;}
+        return math::hsv_to_rgb(hue as f32, 0.8, 1.0) 
     }
 
     fn run_mandelbrot(max_iter: i32, num: Complex<f64>) -> f64 {
