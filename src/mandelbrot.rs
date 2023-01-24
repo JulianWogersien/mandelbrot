@@ -24,20 +24,20 @@ impl Mandelbrot {
         };
         
         let max_worker: i32 = 2;
-        let mut workers: Vec<thread::JoinHandle<Vec<(i32, i32, f64)>>> = Vec::new();
-        let mut results: Vec<Vec<(i32, i32, f64)>> = Vec::new();
+        let mut workers: Vec<thread::JoinHandle<Vec<(i32, i32, (f64, Complex<f64>))>>> = Vec::new();
+        let mut results: Vec<Vec<(i32, i32, (f64, Complex<f64>))>> = Vec::new();
 
         for i in 0..max_worker {
             workers.push(thread::spawn(move || {
                 let max_x: i32 = (i+1) * (size_x / max_worker);
-                let mut results: Vec<(i32, i32, f64)> = Vec::new();
+                let mut results: Vec<(i32, i32, (f64, Complex<f64>))> = Vec::new();
                 println!("max_x: {}", max_x);
                 for x in (size_x / max_worker) * i..max_x {
                     for y in 0..size_y {
                         let max_iter: i32 = 80;
                         let c: Complex<f64> = num::complex::Complex::new(-2.0 + (x as f64 / size_x as f64) * (1.0 - -2.0), -1.0 + (y as f64 / size_y as f64) * (1.0 - -1.0));
         
-                        let n: f64 = Mandelbrot::run_mandelbrot(max_iter, c);
+                        let n: (f64, Complex<f64>) = Mandelbrot::run_mandelbrot(max_iter, c);
                         results.push((x, y, n));
                     }
                 }
@@ -52,9 +52,13 @@ impl Mandelbrot {
                 let max_iter: i32 = 80;
                 let x: i32 = j.0;
                 let y: i32 = j.1;
-                let n: f64 = j.2;
-                let color: Color = Color::rgba(0, 0, 0, (255.0 - n * 255.0 / max_iter as f64) as u8);
-
+                let n: (f64, Complex<f64>) = j.2;
+                
+                let mut rgb: (i32, i32, i32) = (0, 0, 0);
+                if n.0 as i32 != max_iter {
+                    rgb = Self::map_color(n.0, n.1.re(), n.1.im());
+                }
+                //let color: Color = Color::rgba(0, 0, 0, (255.0 - n.0 * 255.0 / max_iter as f64) as u8);
                 /*let mut rgb: (u8, u8, u8) = (Color::BLACK.r, Color::BLACK.g, Color::BLACK.b);
                 if n < max_iter as f64 && n > 0.0 {
                     let l: i32 = (n % 16.0) as i32;
@@ -78,7 +82,7 @@ impl Mandelbrot {
                     _ => (66, 30, 15),
                     }
                 }*/
-                //let color: Color = Color::rgb(rgb.0, rgb.1, rgb.2);
+                let color: Color = Color::rgb(rgb.0 as u8, rgb.1 as u8, rgb.2 as u8);
                 unsafe {
                     t.set_pixel(x as u32, y as u32, color);
                 }
@@ -93,23 +97,23 @@ impl Mandelbrot {
         let mut hue: f64 = 0.0;
 
         zn = (r + c).sqrt();
-        hue = di + 1.0 - zn.abs().ln().ln() / (2.0).ln();
+        hue = di;
         hue = 0.95 + 20.0 * hue;
         while hue > 360.0
-        {hue -= 360.0;}
+            {hue -= 360.0;}
         while hue < 0.0
             {hue += 360.0;}
-        return math::hsv_to_rgb(hue as f32, 0.8, 1.0) 
+        return math::hsv_to_rgb(hue as f32, 50.0, 50.0) 
     }
 
-    fn run_mandelbrot(max_iter: i32, num: Complex<f64>) -> f64 {
+    fn run_mandelbrot(max_iter: i32, num: Complex<f64>) -> (f64, Complex<f64>) {
         let mut z: Complex<f64> = Complex { re: 0.0, im: 0.0 };
         let mut n: f64 = 0.0;
         while z.abs() <= 2.0 && n < max_iter as f64 {
             z = z*z + num;
             n += 1.0;
         }
-        return n + 1.0 - z.abs().ln().ln() / 2.0.ln();
+        return (n + 1.0 - z.abs().ln().ln() / 2.0.ln(), z);
     }
 
     pub fn prepare_for_render(&mut self) {
