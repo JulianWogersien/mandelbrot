@@ -23,7 +23,7 @@ impl Mandelbrot {
             Err(_) => panic!("error loading texture from image"),
         };
         
-        let max_worker: i32 = 2;
+        let max_worker: i32 = 8;
         let mut workers: Vec<thread::JoinHandle<Vec<(i32, i32, (f64, Complex<f64>))>>> = Vec::new();
         let mut results: Vec<Vec<(i32, i32, (f64, Complex<f64>))>> = Vec::new();
 
@@ -31,7 +31,6 @@ impl Mandelbrot {
             workers.push(thread::spawn(move || {
                 let max_x: i32 = (i+1) * (size_x / max_worker);
                 let mut results: Vec<(i32, i32, (f64, Complex<f64>))> = Vec::new();
-                println!("max_x: {}", max_x);
                 for x in (size_x / max_worker) * i..max_x {
                     for y in 0..size_y {
                         let max_iter: i32 = 80;
@@ -98,12 +97,12 @@ impl Mandelbrot {
 
         zn = (r + c).sqrt();
         hue = di;
-        hue = 0.95 + 20.0 * hue;
+        hue = 0.95 + 10.0 * hue;
         while hue > 360.0
             {hue -= 360.0;}
         while hue < 0.0
             {hue += 360.0;}
-        return math::hsv_to_rgb(hue as f32, 50.0, 50.0) 
+        return math::hsv_to_rgb(hue as f32, 90.0, 70.0) 
     }
 
     fn run_mandelbrot(max_iter: i32, num: Complex<f64>) -> (f64, Complex<f64>) {
