@@ -1,3 +1,8 @@
+use std::fs;
+
+use sfml::graphics::Color;
+use yaml_rust::{YamlLoader, YamlEmitter, Yaml};
+
 
 pub struct RgbColor{
     r: u8,
@@ -21,7 +26,7 @@ impl RgbColor {
 }
 
 impl Colorscheme {
-    //pub fn new(scheme: &str, opaqueness: u8) -> Self {
-        
-    //}
+    pub fn new(scheme: &str, opaqueness: u8) -> Self {
+        outline: RgbColor = RgbColor::new(r, b, g)
+    }
 }
