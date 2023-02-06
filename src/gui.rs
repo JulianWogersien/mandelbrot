@@ -2,12 +2,13 @@ use std::rc::Rc;
 
 use sfml::{graphics::{RectangleShape, Rect, Transformable}, system::Vector2f};
 
-use crate::gui_traits::GuiComponent;
+use crate::{gui_traits::GuiComponent, colorscheme::Colorscheme};
 
 
 
 pub struct Gui {
     components: Vec<Box<Button>>,
+    colorscheme: Colorscheme,
 }
 
 impl Gui{
@@ -21,6 +22,10 @@ impl Gui{
                 (comp.callback)();
             }
         })
+    }
+
+    pub fn add_button(&mut self, x: f32, y: f32, width: f32, height: f32, text: String, callback: impl Fn() + 'static) {
+        Button::create(self, x, y, width, height, text, callback);
     }
 }
 
@@ -45,7 +50,7 @@ impl GuiComponent for Button {
         let mut b: RectangleShape = RectangleShape::new();
         b.set_position(Vector2f::new(self.pos_x, self.pos_y));
         b.set_size(Vector2f::new(self.dim_width, self.dim_height));
-        
+        b.set_color
     }
 
     fn coordinate_inside(&self, x: f32, y: f32) -> bool {
