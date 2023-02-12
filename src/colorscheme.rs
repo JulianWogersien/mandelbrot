@@ -10,6 +10,15 @@ pub struct RgbColor{
     b: u8,
 }
 
+// color enums
+pub enum ColorSchemeNames {
+    Outline,
+    Fill,
+    Text,
+    Hover,
+    Selected,
+}
+
 pub struct Colorscheme {
     outline: RgbColor,
     fill: RgbColor,
@@ -33,5 +42,15 @@ impl Colorscheme {
         let hover: RgbColor = RgbColor::new(28, 13, 20);
         let selected: RgbColor = RgbColor::new(12, 5, 9);
         return Colorscheme { outline, fill, text, hover, selected, opaqueness };
+    }
+
+    pub fn sfml_color(&self, color: ColorSchemeNames) -> Color {
+        match color {
+            ColorSchemeNames::Outline => Color::rgba(self.outline.r, self.outline.g, self.outline.b, self.opaqueness),
+            ColorSchemeNames::Fill => Color::rgba(self.fill.r, self.fill.g, self.fill.b, self.opaqueness),
+            ColorSchemeNames::Text => Color::rgba(self.text.r, self.text.g, self.text.b, self.opaqueness),
+            ColorSchemeNames::Hover => Color::rgba(self.hover.r, self.hover.g, self.hover.b, self.opaqueness),
+            ColorSchemeNames::Selected => Color::rgba(self.selected.r, self.selected.g, self.selected.b, self.opaqueness),
+        }
     }
 }

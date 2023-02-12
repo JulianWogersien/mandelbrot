@@ -4,7 +4,7 @@ pub mod gman {
     #[allow(unused_imports)]
     use sfml::{graphics::*, window::*, system::*};
 
-    use crate::{mandelbrot::Mandelbrot, gui::Gui};
+    use crate::{mandelbrot::Mandelbrot, gui::Gui, textrenderer::Textrenderer};
 
     pub struct Gm {
         pub window: RenderWindow,
@@ -13,7 +13,7 @@ pub mod gman {
 
     impl Gm {
         pub fn new() -> Self {
-            let mut window: RenderWindow = RenderWindow::new((1920, 1080), "window", Style::FULLSCREEN, &Default::default());
+            let mut window: RenderWindow = RenderWindow::new((1920, 1080), "window", Style::NONE, &Default::default());
             window.set_framerate_limit(60);
             window.set_vertical_sync_enabled(true);
             let gm: Gm = Gm {
@@ -25,7 +25,9 @@ pub mod gman {
 
         pub fn run(&mut self) {
             let mut mandelbrot: Mandelbrot = Mandelbrot::new(self.window.size().x as i32, self.window.size().y as i32);
-            let mut gui: Gui = Gui::new();
+            let textdraw: Textrenderer = Textrenderer::new(20, "fonts/Roboto-Regular.ttf");
+            let mut gui: Gui = Gui::new("fonts/Roboto-Regular.ttf", 24);
+            gui.add_button(10.0, 10.0, 70.0, 20.0, "test".to_owned(), || println!("test"));
             let clock: sfml::SfBox<Clock> = Clock::start();
             let mut prev_time: Time = clock.elapsed_time();
             let mut current_time: Time;
@@ -44,10 +46,14 @@ pub mod gman {
                     }
                 }
             
+                let mouse_pos: Vector2i = mouse::desktop_position();
+                let mouse_pos: Vector2f = Vector2f::new((mouse_pos.x - self.window.position().x) as f32, (mouse_pos.y - self.window.position().y) as f32);
+                gui.update(mouse_pos.x as i32, mouse_pos.y as i32, (mouse::Button::Left.is_pressed(), mouse::Button::Middle.is_pressed(), mouse::Button::Right.is_pressed()));
 
                 mandelbrot.prepare_for_render();
                 self.window.clear(Color::WHITE);
                 self.window.draw(&mandelbrot);
+                self.window.draw(&gui);
                 self.window.display();
 
                 current_time = clock.elapsed_time();
@@ -56,8 +62,6 @@ pub mod gman {
                 self.window.set_title(title);
                 prev_time = current_time;
             }
-
-            // terminate
         }
     }
 }
