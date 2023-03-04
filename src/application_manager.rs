@@ -27,7 +27,8 @@ pub mod gman {
             let mut mandelbrot: Mandelbrot = Mandelbrot::new(self.window.size().x as i32, self.window.size().y as i32);
             let textdraw: Textrenderer = Textrenderer::new(20, "fonts/Roboto-Regular.ttf");
             let mut gui: Gui = Gui::new("fonts/Roboto-Regular.ttf", 24);
-            gui.add_button(10.0, 10.0, 70.0, 20.0, "test".to_owned(), || println!("test"));
+            gui.add_slider(10.0, 40.0, 200.0, 0.0, 100.0);
+            gui.add_slider(10.0, 70.0, 200.0, 0.0, 100.0);
             let clock: sfml::SfBox<Clock> = Clock::start();
             let mut prev_time: Time = clock.elapsed_time();
             let mut current_time: Time;
@@ -49,6 +50,10 @@ pub mod gman {
                 let mouse_pos: Vector2i = mouse::desktop_position();
                 let mouse_pos: Vector2f = Vector2f::new((mouse_pos.x - self.window.position().x) as f32, (mouse_pos.y - self.window.position().y) as f32);
                 gui.update(mouse_pos.x as i32, mouse_pos.y as i32, (mouse::Button::Left.is_pressed(), mouse::Button::Middle.is_pressed(), mouse::Button::Right.is_pressed()));
+
+                if gui.slider_components[0].get_value_changed() || gui.slider_components[1].get_value_changed() {
+                    mandelbrot.set_color(gui.slider_components[0].value, gui.slider_components[1].value);
+                }
 
                 mandelbrot.prepare_for_render();
                 self.window.clear(Color::WHITE);

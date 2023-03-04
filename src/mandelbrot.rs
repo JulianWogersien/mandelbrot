@@ -9,6 +9,7 @@ use crate::math::math;
 pub struct Mandelbrot {
     pixels: sfml::graphics::Image,
     tex: SfBox<Texture>,
+    results: Vec<Vec<(i32, i32, (f64, Complex<f64>))>>,
 }
 
 impl Mandelbrot {
@@ -46,7 +47,7 @@ impl Mandelbrot {
         
         workers.into_iter().for_each(|worker| results.push(worker.join().unwrap()));
 
-        for i in results {
+        for i in &results {
             for j in i {
                 let max_iter: i32 = 80;
                 let x: i32 = j.0;
@@ -55,7 +56,7 @@ impl Mandelbrot {
                 
                 let mut rgb: (i32, i32, i32) = (0, 0, 0);
                 if n.0 as i32 != max_iter {
-                    rgb = Self::map_color(n.0, n.1.re(), n.1.im());
+                    rgb = Self::map_color(n.0, n.1.re(), n.1.im(), 90.0, 70.0);
                 }
                 //let color: Color = Color::rgba(0, 0, 0, (255.0 - n.0 * 255.0 / max_iter as f64) as u8);
                 /*let mut rgb: (u8, u8, u8) = (Color::BLACK.r, Color::BLACK.g, Color::BLACK.b);
@@ -88,10 +89,22 @@ impl Mandelbrot {
             }
         }
 
-        return Mandelbrot { pixels: t, tex};
+        return Mandelbrot { pixels: t, tex, results};
     }
 
-    fn map_color(di: f64, r: f64, c: f64) -> (i32, i32, i32) {
+    pub fn set_color(&mut self, value: f32, saturation: f32) {
+        for i in 0..self.results.len() {
+            for j in 0..self.results[i].len() {
+                let (x, y, (n, z)) = self.results[i][j];
+                let (r, g, b) = Mandelbrot::map_color(n, z.re, z.im, value, saturation);
+                unsafe {
+                self.pixels.set_pixel(x.try_into().unwrap(), y.try_into().unwrap(), Color::rgb(r.try_into().unwrap(), g.try_into().unwrap(), b.try_into().unwrap()));
+                }
+            }
+        }
+    }
+
+    fn map_color(di: f64, r: f64, c: f64, saturation: f32, value: f32) -> (i32, i32, i32) {
         let mut zn: f64 = 0.0;
         let mut hue: f64 = 0.0;
 
@@ -102,7 +115,7 @@ impl Mandelbrot {
             {hue -= 360.0;}
         while hue < 0.0
             {hue += 360.0;}
-        return math::hsv_to_rgb(hue as f32, 90.0, 70.0) 
+        return math::hsv_to_rgb(hue as f32, saturation, value) 
     }
 
     fn run_mandelbrot(max_iter: i32, num: Complex<f64>) -> (f64, Complex<f64>) {
@@ -121,6 +134,8 @@ impl Mandelbrot {
             Err(_) => panic!("error loading texture from image"),
         };
     }
+
+    
 }
 
 impl Drawable for Mandelbrot {
