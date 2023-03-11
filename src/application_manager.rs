@@ -4,7 +4,7 @@ pub mod gman {
     #[allow(unused_imports)]
     use sfml::{graphics::*, window::*, system::*};
 
-    use crate::{mandelbrot::Mandelbrot, gui::Gui, textrenderer::Textrenderer};
+    use crate::{mandelbrot::Mandelbrot, gui::Gui};
 
     pub struct Gm {
         pub window: RenderWindow,
@@ -14,6 +14,7 @@ pub mod gman {
     impl Gm {
         pub fn new() -> Self {
             let mut window: RenderWindow = RenderWindow::new((1920, 1080), "window", Style::NONE, &Default::default());
+            window.set_position((0, 0).into());
             window.set_framerate_limit(60);
             window.set_vertical_sync_enabled(true);
             let gm: Gm = Gm {
@@ -25,10 +26,10 @@ pub mod gman {
 
         pub fn run(&mut self) {
             let mut mandelbrot: Mandelbrot = Mandelbrot::new(self.window.size().x as i32, self.window.size().y as i32);
-            let textdraw: Textrenderer = Textrenderer::new(20, "fonts/Roboto-Regular.ttf");
             let mut gui: Gui = Gui::new("fonts/Roboto-Regular.ttf", 24);
             gui.add_slider(10.0, 40.0, 200.0, 0.0, 100.0);
             gui.add_slider(10.0, 70.0, 200.0, 0.0, 100.0);
+            gui.add_slider(10.0, 100.0, 200.0, 0.0, 100.0);
             let clock: sfml::SfBox<Clock> = Clock::start();
             let mut prev_time: Time = clock.elapsed_time();
             let mut current_time: Time;
@@ -52,7 +53,7 @@ pub mod gman {
                 gui.update(mouse_pos.x as i32, mouse_pos.y as i32, (mouse::Button::Left.is_pressed(), mouse::Button::Middle.is_pressed(), mouse::Button::Right.is_pressed()));
 
                 if gui.slider_components[0].get_value_changed() || gui.slider_components[1].get_value_changed() {
-                    mandelbrot.set_color(gui.slider_components[0].value, gui.slider_components[1].value);
+                    mandelbrot.set_color(gui.slider_components[0].value, gui.slider_components[1].value, gui.slider_components[2].value.into());
                 }
 
                 mandelbrot.prepare_for_render();
@@ -63,7 +64,7 @@ pub mod gman {
 
                 current_time = clock.elapsed_time();
                 self.fps = 1.0 / (current_time.as_seconds() - prev_time.as_seconds());
-                let title: &str = &("g    fps: ".to_owned() + &self.fps.to_string());
+                let title: &str = &("mandelbrot    fps: ".to_owned() + &self.fps.to_string());
                 self.window.set_title(title);
                 prev_time = current_time;
             }

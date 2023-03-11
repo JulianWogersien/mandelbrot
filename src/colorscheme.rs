@@ -1,7 +1,4 @@
-use std::fs;
-
 use sfml::graphics::Color;
-use yaml_rust::{YamlLoader, YamlEmitter, Yaml};
 
 
 pub struct RgbColor{
@@ -11,6 +8,7 @@ pub struct RgbColor{
 }
 
 // color enums
+#[allow(dead_code)]
 pub enum ColorSchemeNames {
     Outline,
     Fill,
@@ -35,7 +33,7 @@ impl RgbColor {
 }
 
 impl Colorscheme {
-    pub fn new(scheme: &str, opaqueness: u8) -> Self {
+    pub fn new(_scheme: &str, opaqueness: u8) -> Self {
         let outline: RgbColor = RgbColor::new(33, 31, 32);
         let fill: RgbColor = RgbColor::new(79, 75, 77);
         let text: RgbColor = RgbColor::new(255, 255, 255);

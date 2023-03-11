@@ -1,9 +1,8 @@
-use std::{rc::Rc, arch::x86_64::_SIDD_LEAST_SIGNIFICANT};
+use std::rc::Rc;
 
-use sfml::{graphics::{RectangleShape, Rect, Transformable, Shape, Drawable, Color, Text, Font}, system::Vector2f, SfBox};
+use sfml::{graphics::{RectangleShape, Transformable, Shape, Drawable, Text, Font}, system::Vector2f, SfBox};
 
 use crate::{gui_traits::GuiComponent, colorscheme::{Colorscheme, ColorSchemeNames}};
-
 
 
 pub struct Gui {
@@ -40,6 +39,7 @@ impl Gui{
         self.last_mouse_state = mouse_state;
     }
 
+    #[allow(dead_code)]
     pub fn add_button(&mut self, x: f32, y: f32, width: f32, height: f32, text: String, callback: impl Fn() + 'static) {
         Button::create(self, x, y, width, height, text, callback);
     }
@@ -73,6 +73,7 @@ impl Button {
 }
 
 impl GuiComponent for Button {
+    #[allow(unused)]
     fn render<'a: 'shader, 'texture, 'shader, 'shader_texture>(&'a self, target: &mut dyn sfml::graphics::RenderTarget, states: &sfml::graphics::RenderStates<'texture, 'shader, 'shader_texture>, gui: &Gui) {
         let mut b: RectangleShape = RectangleShape::new();
         b.set_position(Vector2f::new(self.pos_x, self.pos_y));
@@ -123,6 +124,7 @@ impl Slider {
 }
 
 impl GuiComponent for Slider {
+    #[allow(unused)]
     fn render<'a: 'shader, 'texture, 'shader, 'shader_texture>(&'a self, target: &mut dyn sfml::graphics::RenderTarget, states: &sfml::graphics::RenderStates<'texture, 'shader, 'shader_texture>, gui: &Gui) {
         let mut b: RectangleShape = RectangleShape::new();
         b.set_position(Vector2f::new(self.pos_x, self.pos_y));

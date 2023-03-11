@@ -56,7 +56,7 @@ impl Mandelbrot {
                 
                 let mut rgb: (i32, i32, i32) = (0, 0, 0);
                 if n.0 as i32 != max_iter {
-                    rgb = Self::map_color(n.0, n.1.re(), n.1.im(), 90.0, 70.0);
+                    rgb = Self::map_color(n.0, n.1.re(), n.1.im(), 90.0, 70.0, 10.0);
                 }
                 //let color: Color = Color::rgba(0, 0, 0, (255.0 - n.0 * 255.0 / max_iter as f64) as u8);
                 /*let mut rgb: (u8, u8, u8) = (Color::BLACK.r, Color::BLACK.g, Color::BLACK.b);
@@ -92,11 +92,11 @@ impl Mandelbrot {
         return Mandelbrot { pixels: t, tex, results};
     }
 
-    pub fn set_color(&mut self, value: f32, saturation: f32) {
+    pub fn set_color(&mut self, value: f32, saturation: f32, modifier: f64) {
         for i in 0..self.results.len() {
             for j in 0..self.results[i].len() {
                 let (x, y, (n, z)) = self.results[i][j];
-                let (r, g, b) = Mandelbrot::map_color(n, z.re, z.im, value, saturation);
+                let (r, g, b) = Mandelbrot::map_color(n, z.re, z.im, value, saturation, modifier);
                 unsafe {
                 self.pixels.set_pixel(x.try_into().unwrap(), y.try_into().unwrap(), Color::rgb(r.try_into().unwrap(), g.try_into().unwrap(), b.try_into().unwrap()));
                 }
@@ -104,13 +104,12 @@ impl Mandelbrot {
         }
     }
 
-    fn map_color(di: f64, r: f64, c: f64, saturation: f32, value: f32) -> (i32, i32, i32) {
-        let mut zn: f64 = 0.0;
-        let mut hue: f64 = 0.0;
+    fn map_color(di: f64, r: f64, c: f64, saturation: f32, value: f32, modifier: f64) -> (i32, i32, i32) {
+        let mut hue: f64;
 
-        zn = (r + c).sqrt();
+        let _zn: f64 = (r + c).sqrt();
         hue = di;
-        hue = 0.95 + 10.0 * hue;
+        hue = 0.95 + modifier * hue;
         while hue > 360.0
             {hue -= 360.0;}
         while hue < 0.0
