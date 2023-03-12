@@ -1,5 +1,5 @@
 [package]
-name = "t"
+name = "Mandelbrot"
 version = "0.1.0"
 authors = ["Julian Wogersien <julian.wogersien@gmail.com>"]
 
