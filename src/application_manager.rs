@@ -15,8 +15,8 @@ pub mod gman {
 
     impl Gm {
         pub fn new() -> Self {
-            let mut window: RenderWindow = RenderWindow::new((1920, 1080), "window", Style::FULLSCREEN, &Default::default());
-            window.set_position((0, 0).into());
+            let mut window: RenderWindow = RenderWindow::new((1920, 1080), "window", Style::NONE, &Default::default());
+            window.set_position((1000, 0).into());
             window.set_framerate_limit(60);
             window.set_vertical_sync_enabled(true);
             let gm: Gm = Gm {
@@ -32,11 +32,13 @@ pub mod gman {
             gui.add_slider(10.0, 40.0, 200.0, 0.0, 100.0);
             gui.add_slider(10.0, 70.0, 200.0, 0.0, 100.0);
             gui.add_slider(10.0, 100.0, 200.0, 0.0, 100.0);
+            gui.add_label(10.0, 130.0, "press R to regenerate colors".to_string());
             let clock: sfml::SfBox<Clock> = Clock::start();
             let mut prev_time: Time = clock.elapsed_time();
             let mut current_time: Time;
-            let mut thread: JoinHandle<Vec<u8>>;
+            let mut thread: Option<JoinHandle<Vec<u8>>> = None;
             let mut is_thread_done: bool = true;
+            let mut regen_colors: bool = false;
 
             while self.window.is_open() {
                 while let Some(event) = self.window.poll_event() {
@@ -45,7 +47,7 @@ pub mod gman {
                         Event::KeyPressed { code: Key::Escape, alt: false, ctrl: false, shift: false, system: false } => self.window.close(),
                         Event::KeyReleased { code, ..} => {
                             if code == Key::R {
-                                
+                                regen_colors = true;
                             }
                         }
                         _ => {}
@@ -56,18 +58,20 @@ pub mod gman {
                 let mouse_pos: Vector2f = Vector2f::new((mouse_pos.x - self.window.position().x) as f32, (mouse_pos.y - self.window.position().y) as f32);
                 gui.update(mouse_pos.x as i32, mouse_pos.y as i32, (mouse::Button::Left.is_pressed(), mouse::Button::Middle.is_pressed(), mouse::Button::Right.is_pressed()));
 
-                if gui.slider_components[0].get_value_changed() || gui.slider_components[1].get_value_changed() || gui.slider_components[2].get_value_changed(){
-                    thread = mandelbrot.set_color(gui.slider_components[0].value, gui.slider_components[1].value, gui.slider_components[2].value.into());
+                if gui.slider_components[0].get_value_changed() || gui.slider_components[1].get_value_changed() || gui.slider_components[2].get_value_changed() || regen_colors {
+                    thread = Some(mandelbrot.set_color(gui.slider_components[0].value, gui.slider_components[1].value, gui.slider_components[2].value.into()));
                     is_thread_done = false;
+                    regen_colors = false;
                 }
 
                 if is_thread_done == false {
-                    unsafe {
-                    if thread.is_finished() {
+                    let join_handle = thread.take().expect("must exist at this point (why doesnt it)");
+                    if join_handle.is_finished() {
                         is_thread_done = true;
-                        let pixels = thread.join().unwrap();
+                        let pixels = join_handle.join().unwrap();
                         mandelbrot.set_pixels(pixels);
-                    }
+                    } else {
+                        thread = Some(join_handle);
                     }
                 }
 

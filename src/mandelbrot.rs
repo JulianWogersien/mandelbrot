@@ -93,15 +93,20 @@ impl Mandelbrot {
     }
 
     pub fn set_pixels(&mut self, pixels: Vec<u8>) {
-        self.pixels = match Image::from_memory(&pixels) {
-            Some(x) => x,
-            None => panic!("error creating image from memory"),
-        };
+        unsafe {
+            self.pixels = match Image::create_from_pixels(self.pixels.size().x, self.pixels.size().y, &pixels) {
+                Some(x) => x,
+                None => panic!("error creating image from memory"),
+            };
+        }
     }
 
-    pub fn set_color(&mut self, value: f32, saturation: f32, modifier: f64) -> JoinHandle<(Vec<u8>)> {
+    pub fn set_color(&mut self, value: f32, saturation: f32, modifier: f64) -> JoinHandle<Vec<u8>> {
         let raw_pixels = self.pixels.pixel_data();
-        let mut pixels: Vec<u8> = Vec::with_capacity(raw_pixels.len());
+        let mut pixels: Vec<u8> = Vec::with_capacity(self.pixels.size().x as usize * self.pixels.size().y as usize * 4);
+        for i in 0..pixels.capacity() {
+            pixels.push(raw_pixels[i]);
+        }
         let width: i32 = self.pixels.size().x as i32;
         let results = self.results.clone();
         let t: JoinHandle<Vec<u8>> = thread::spawn(move || {

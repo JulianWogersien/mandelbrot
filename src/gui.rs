@@ -1,12 +1,13 @@
 use std::rc::Rc;
 
-use sfml::{graphics::{RectangleShape, Transformable, Shape, Drawable, Text, Font}, system::Vector2f, SfBox};
+use sfml::{graphics::{RectangleShape, Transformable, Shape, Drawable, Text, Font}, system::Vector2f, SfBox, window::mouse};
 
 use crate::{gui_traits::GuiComponent, colorscheme::{Colorscheme, ColorSchemeNames}};
 
 
 pub struct Gui {
     components: Vec<Box<Button>>,
+    label_components: Vec<Box<Label>>,
     pub slider_components: Vec<Box<Slider>>,
     colorscheme: Colorscheme,
     font: Rc<SfBox<Font>>,
@@ -17,7 +18,7 @@ pub struct Gui {
 impl Gui{
     pub fn new(font: &str, font_size: u32) -> Self {
         let font = Rc::new(sfml::graphics::Font::from_file(font).unwrap());
-        return Gui { components: Vec::with_capacity(10), colorscheme: Colorscheme::new("default", 200), font, font_size, last_mouse_state: (false, false, false), slider_components: Vec::with_capacity(10) };
+        return Gui { components: Vec::with_capacity(10), colorscheme: Colorscheme::new("default", 200), font, font_size, last_mouse_state: (false, false, false), slider_components: Vec::with_capacity(10), label_components: Vec::with_capacity(10) };
     }
 
     pub fn update(&mut self, mouse_x: i32, mouse_y: i32, mouse_state: (bool, bool, bool)) {
@@ -33,7 +34,13 @@ impl Gui{
             self.slider_components.iter_mut().for_each(|comp: &mut Box<Slider>| {
                 if comp.coordinate_inside(mouse_x as f32,  mouse_y as f32) {
                     comp.update(mouse_x as f32);
+                    comp.is_dragging = true;
                 }
+            })
+        } 
+        if !mouse_state.0 {
+            self.slider_components.iter_mut().for_each(|comp: &mut Box<Slider>| {
+                comp.is_dragging = false;
             })
         }
         self.last_mouse_state = mouse_state;
@@ -47,12 +54,17 @@ impl Gui{
     pub fn add_slider(&mut self, x: f32, y: f32, length: f32, min_value: f32, max_value: f32) {
         Slider::create(self, x, y, length, min_value, max_value);
     }
+
+    pub fn add_label(&mut self, x: f32, y: f32, text: String) {
+        Label::create(self, x, y, text);
+    }
 }
 
 impl Drawable for Gui {
     fn draw<'a: 'shader, 'texture, 'shader, 'shader_texture>(&'a self, target: &mut dyn sfml::graphics::RenderTarget, states: &sfml::graphics::RenderStates<'texture, 'shader, 'shader_texture>) {
         self.components.iter().for_each(|comp| comp.render(target, states, self));
         self.slider_components.iter().for_each(|comp| comp.render(target, states, self));
+        self.label_components.iter().for_each(|comp| comp.render(target, states, self));
     }
 }
 
@@ -105,11 +117,13 @@ pub struct Slider {
     max_value: f32,
     min_value: f32,
     last_value: f32,
+    is_dragging: bool,
+    last_is_dragging: bool,
 }
 
 impl Slider {
     pub fn create(gui: &mut Gui, x: f32, y: f32, length: f32, min_value: f32, max_value: f32) {
-        let slider = Box::new(Slider{pos_x: x, pos_y: y, length, value: (max_value + min_value) / 2.0, max_value, min_value, last_value: (max_value + min_value) / 2.0});
+        let slider = Box::new(Slider{pos_x: x, pos_y: y, length, value: (max_value + min_value) / 2.0, max_value, min_value, last_value: (max_value + min_value) / 2.0, is_dragging: false, last_is_dragging: false});
         gui.slider_components.push(slider);
     }
 
@@ -118,8 +132,19 @@ impl Slider {
         self.value = (mouse_x - self.pos_x) / self.length * (self.max_value - self.min_value) + self.min_value;
     }
 
-    pub fn get_value_changed(&self) -> bool {
-        self.value != self.last_value
+    pub fn get_value_changed(&mut self) -> bool {
+        if mouse::Button::Left.is_pressed() {
+            return false;
+        }
+        if self.value != self.last_value {
+            self.value = self.last_value;
+            return true;
+        }
+        if self.last_is_dragging != self.is_dragging {
+            self.last_is_dragging = self.is_dragging;
+            return true;
+        }
+        return false;
     }
 }
 
@@ -146,6 +171,33 @@ impl GuiComponent for Slider {
         if x > self.pos_x && x < self.pos_x + self.length && y > self.pos_y && y < self.pos_y + 10.0 {
             return true;
         }
+        false
+    }
+}
+
+pub struct Label {
+    pos_x: f32,
+    pos_y: f32,
+    text: String,
+}
+
+impl Label {
+    pub fn create(gui: &mut Gui, x: f32, y: f32, text: String) {
+        let label = Box::new(Label{pos_x: x, pos_y: y, text});
+        gui.label_components.push(label);
+    }
+}
+
+impl GuiComponent for Label {
+    #[allow(unused)]
+    fn render<'a: 'shader, 'texture, 'shader, 'shader_texture>(&'a self, target: &mut dyn sfml::graphics::RenderTarget, states: &sfml::graphics::RenderStates<'texture, 'shader, 'shader_texture>, gui: &Gui) {
+        let mut text = Text::new(&self.text, &gui.font, gui.font_size);
+        text.set_position(Vector2f::new(self.pos_x, self.pos_y));
+        text.set_fill_color(gui.colorscheme.sfml_color(ColorSchemeNames::Text));
+        target.draw(&text);
+    }
+
+    fn coordinate_inside(&self, _x: f32, _y: f32) -> bool {
         false
     }
 }
