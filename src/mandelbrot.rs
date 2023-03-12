@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+use std::{convert::TryInto, thread::JoinHandle};
 use std::thread;
 
 use num::{Complex, complex::ComplexFloat};
@@ -92,16 +92,36 @@ impl Mandelbrot {
         return Mandelbrot { pixels: t, tex, results};
     }
 
-    pub fn set_color(&mut self, value: f32, saturation: f32, modifier: f64) {
-        for i in 0..self.results.len() {
-            for j in 0..self.results[i].len() {
-                let (x, y, (n, z)) = self.results[i][j];
-                let (r, g, b) = Mandelbrot::map_color(n, z.re, z.im, value, saturation, modifier);
-                unsafe {
-                self.pixels.set_pixel(x.try_into().unwrap(), y.try_into().unwrap(), Color::rgb(r.try_into().unwrap(), g.try_into().unwrap(), b.try_into().unwrap()));
+    pub fn set_pixels(&mut self, pixels: Vec<u8>) {
+        self.pixels = match Image::from_memory(&pixels) {
+            Some(x) => x,
+            None => panic!("error creating image from memory"),
+        };
+    }
+
+    pub fn set_color(&mut self, value: f32, saturation: f32, modifier: f64) -> JoinHandle<(Vec<u8>)> {
+        let raw_pixels = self.pixels.pixel_data();
+        let mut pixels: Vec<u8> = Vec::with_capacity(raw_pixels.len());
+        let width: i32 = self.pixels.size().x as i32;
+        let results = self.results.clone();
+        let t: JoinHandle<Vec<u8>> = thread::spawn(move || {
+            for i in 0..results.len() {
+                for j in 0..results[i].len() {
+                    let (x, y, (n, z)) = results[i][j];
+                    let (r, g, b) = Mandelbrot::map_color(n, z.re, z.im, value, saturation, modifier);
+                    Mandelbrot::set_pixel(x, y, Color::rgb(r.try_into().unwrap(), g.try_into().unwrap(), b.try_into().unwrap()), &mut pixels, width);
                 }
             }
-        }
+            return pixels
+        });
+        t
+    }
+
+    fn set_pixel(x: i32, y: i32, color: Color, pixels: &mut Vec<u8>, width: i32) {
+        pixels[(((y * width as i32 + x) * 4) + 0) as usize] = color.r;
+        pixels[(((y * width as i32 + x) * 4) + 1) as usize] = color.g;
+        pixels[(((y * width as i32 + x) * 4) + 2) as usize] = color.b;
+        pixels[(((y * width as i32 + x) * 4) + 3) as usize] = color.a;
     }
 
     fn map_color(di: f64, r: f64, c: f64, saturation: f32, value: f32, modifier: f64) -> (i32, i32, i32) {
