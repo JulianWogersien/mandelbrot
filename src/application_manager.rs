@@ -16,7 +16,7 @@ pub mod gman {
     impl Gm {
         pub fn new() -> Self {
             let mut window: RenderWindow = RenderWindow::new((1920, 1080), "window", Style::NONE, &Default::default());
-            window.set_position((0, 0).into());
+            window.set_position((1000, 0).into());
             window.set_framerate_limit(60);
             window.set_vertical_sync_enabled(true);
             let gm: Gm = Gm {
@@ -37,6 +37,9 @@ pub mod gman {
             gui.add_checkbox(10.0, 170.0);
             gui.add_label(40.0, 160.0, "grayscale".to_string());
             gui.add_label(10.0, 200.0, "press g to hide gui".to_string());
+            gui.add_label(10.0, 230.0, "press +/- to increase/decrease iterations".to_string());
+            gui.add_label(10.0, 260.0, "press m to recalculate the set".to_string());
+            gui.add_label(10.0, 290.0, "iterations: 80".to_string());
             let clock: sfml::SfBox<Clock> = Clock::start();
             let mut prev_time: Time = clock.elapsed_time();
             let mut current_time: Time;
@@ -55,6 +58,18 @@ pub mod gman {
                             }
                             if code == Key::G {
                                 do_gui = !do_gui;
+                            }
+                            if code == Key::Add {
+                                mandelbrot.max_iterations += 10;
+                                gui.label_components[5].text = format!("iterations: {}", mandelbrot.max_iterations);
+                            }
+                            if code == Key::Subtract {
+                                mandelbrot.max_iterations -= 10;
+                                gui.label_components[5].text = format!("iterations: {}", mandelbrot.max_iterations);
+                            }
+                            if code == Key::M {
+                                println!("generating");
+                                mandelbrot.generate(8);
                             }
                         }
                         _ => {}

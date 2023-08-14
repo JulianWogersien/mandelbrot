@@ -7,7 +7,7 @@ use crate::{gui_traits::GuiComponent, colorscheme::{Colorscheme, ColorSchemeName
 
 pub struct Gui {
     components: Vec<Box<Button>>,
-    label_components: Vec<Box<Label>>,
+    pub label_components: Vec<Box<Label>>,
     pub slider_components: Vec<Box<Slider>>,
     pub checkbox_components: Vec<Box<Checkbox>>,
     colorscheme: Colorscheme,
@@ -231,7 +231,7 @@ impl GuiComponent for Checkbox {
 pub struct Label {
     pos_x: f32,
     pos_y: f32,
-    text: String,
+    pub text: String,
 }
 
 impl Label {

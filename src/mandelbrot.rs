@@ -10,6 +10,10 @@ pub struct Mandelbrot {
     pixels: sfml::graphics::Image,
     tex: SfBox<Texture>,
     results: Vec<Vec<(i32, i32, (f64, Complex<f64>))>>,
+    pub zoom: f32,
+    pub position_x: f32,
+    pub position_y: f32,
+    pub max_iterations: i32,
 }
 
 impl Mandelbrot {
@@ -89,7 +93,38 @@ impl Mandelbrot {
             }
         }
 
-        return Mandelbrot { pixels: t, tex, results};
+        let ts = t.size().clone();
+        
+        return Mandelbrot { pixels: t, tex, results, zoom: 1.0, position_x: ts.x as f32, position_y: ts.y as f32, max_iterations: 80};
+    }
+
+    pub fn generate(&mut self, max_workers: i32) {
+        let mut workers: Vec<thread::JoinHandle<Vec<(i32, i32, (f64, Complex<f64>))>>> = Vec::new();
+        let mut results: Vec<Vec<(i32, i32, (f64, Complex<f64>))>> = Vec::new();
+
+        let max_worker = max_workers;
+        let size_x = self.results.len() as i32;
+        let size_y = self.results[0].len() as i32;
+        let max_iter = self.max_iterations.clone();
+
+        for i in 0..max_worker {
+            workers.push(thread::spawn(move || {
+                let max_x: i32 = (i+1) * (size_x / max_worker);
+                let mut results: Vec<(i32, i32, (f64, Complex<f64>))> = Vec::new();
+                for x in (size_x / max_worker) * i..max_x {
+                    for y in 0..size_y {
+                        let max_iter: i32 = max_iter;
+                        let c: Complex<f64> = num::complex::Complex::new(-2.0 + (x as f64 / size_x as f64) * (1.0 - -2.0), -1.0 + (y as f64 / size_y as f64) * (1.0 - -1.0));
+        
+                        let n: (f64, Complex<f64>) = Mandelbrot::run_mandelbrot(max_iter, c);
+                        results.push((x, y, n));
+                    }
+                }
+                return results
+            })) 
+        }
+        
+        workers.into_iter().for_each(|worker| results.push(worker.join().unwrap()));
     }
 
     pub fn set_pixels(&mut self, pixels: Vec<u8>) {
@@ -109,6 +144,7 @@ impl Mandelbrot {
         }
         let width: i32 = self.pixels.size().x as i32;
         let results = self.results.clone();
+        let maxiter = self.max_iterations.clone();
         let t: JoinHandle<Vec<u8>> = thread::spawn(move || {
             for i in 0..results.len() {
                 for j in 0..results[i].len() {
@@ -117,7 +153,7 @@ impl Mandelbrot {
                         let (r, g, b) = Mandelbrot::map_color(n, z.re, z.im, value, saturation, modifier);
                         Mandelbrot::set_pixel(x, y, Color::rgb(r.try_into().unwrap(), g.try_into().unwrap(), b.try_into().unwrap()), &mut pixels, width);
                     } else {
-                        let color: Color = Color::rgba(0, 0, 0, (255.0 - n * 255.0 / 80.0 as f64) as u8);
+                        let color: Color = Color::rgba(0, 0, 0, (255.0 - n * 255.0 / maxiter as f64) as u8);
                         Mandelbrot::set_pixel(x, y, color, &mut pixels, width);
                     }
                 }
