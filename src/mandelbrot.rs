@@ -1,7 +1,10 @@
+use std::fmt::format;
+use std::time::{Instant, SystemTime};
 use std::{convert::TryInto, thread::JoinHandle};
 use std::thread;
 
 use num::{Complex, complex::ComplexFloat};
+use sfml::system::Time;
 use sfml::{graphics::{Drawable, Sprite, Image, Texture, Rect, Color}, SfBox, system::Vector2i};
 
 use crate::math::math;
@@ -125,6 +128,10 @@ impl Mandelbrot {
         }
         
         workers.into_iter().for_each(|worker| results.push(worker.join().unwrap()));
+    }
+
+    pub fn save(&self) {
+        let _ = self.pixels.save_to_file("mandelbrot.png");
     }
 
     pub fn set_pixels(&mut self, pixels: Vec<u8>) {

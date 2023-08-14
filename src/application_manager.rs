@@ -40,6 +40,7 @@ pub mod gman {
             gui.add_label(10.0, 230.0, "press +/- to increase/decrease iterations".to_string());
             gui.add_label(10.0, 260.0, "press m to recalculate the set".to_string());
             gui.add_label(10.0, 290.0, "iterations: 80".to_string());
+            gui.add_label(10.0, 320.0, "press s to save".to_string());
             let clock: sfml::SfBox<Clock> = Clock::start();
             let mut prev_time: Time = clock.elapsed_time();
             let mut current_time: Time;
@@ -70,6 +71,10 @@ pub mod gman {
                             if code == Key::M {
                                 println!("generating");
                                 mandelbrot.generate(8);
+                                regen_colors = true;
+                            }
+                            if code == Key::S {
+                                mandelbrot.save();
                             }
                         }
                         _ => {}
