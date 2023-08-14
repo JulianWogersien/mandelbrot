@@ -101,7 +101,7 @@ impl Mandelbrot {
         }
     }
 
-    pub fn set_color(&mut self, value: f32, saturation: f32, modifier: f64) -> JoinHandle<Vec<u8>> {
+    pub fn set_color(&mut self, value: f32, saturation: f32, modifier: f64, do_grayscale: bool) -> JoinHandle<Vec<u8>> {
         let raw_pixels = self.pixels.pixel_data();
         let mut pixels: Vec<u8> = Vec::with_capacity(self.pixels.size().x as usize * self.pixels.size().y as usize * 4);
         for i in 0..pixels.capacity() {
@@ -113,8 +113,13 @@ impl Mandelbrot {
             for i in 0..results.len() {
                 for j in 0..results[i].len() {
                     let (x, y, (n, z)) = results[i][j];
-                    let (r, g, b) = Mandelbrot::map_color(n, z.re, z.im, value, saturation, modifier);
-                    Mandelbrot::set_pixel(x, y, Color::rgb(r.try_into().unwrap(), g.try_into().unwrap(), b.try_into().unwrap()), &mut pixels, width);
+                    if !do_grayscale {
+                        let (r, g, b) = Mandelbrot::map_color(n, z.re, z.im, value, saturation, modifier);
+                        Mandelbrot::set_pixel(x, y, Color::rgb(r.try_into().unwrap(), g.try_into().unwrap(), b.try_into().unwrap()), &mut pixels, width);
+                    } else {
+                        let color: Color = Color::rgba(0, 0, 0, (255.0 - n * 255.0 / 80.0 as f64) as u8);
+                        Mandelbrot::set_pixel(x, y, color, &mut pixels, width);
+                    }
                 }
             }
             return pixels

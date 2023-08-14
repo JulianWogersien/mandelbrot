@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use sfml::{graphics::{RectangleShape, Transformable, Shape, Drawable, Text, Font}, system::Vector2f, SfBox, window::mouse};
+use sfml::{graphics::{RectangleShape, Transformable, Shape, Drawable, Text, Font, Color}, system::Vector2f, SfBox, window::mouse};
 
 use crate::{gui_traits::GuiComponent, colorscheme::{Colorscheme, ColorSchemeNames}};
 
@@ -9,6 +9,7 @@ pub struct Gui {
     components: Vec<Box<Button>>,
     label_components: Vec<Box<Label>>,
     pub slider_components: Vec<Box<Slider>>,
+    pub checkbox_components: Vec<Box<Checkbox>>,
     colorscheme: Colorscheme,
     font: Rc<SfBox<Font>>,
     font_size: u32,
@@ -18,7 +19,7 @@ pub struct Gui {
 impl Gui{
     pub fn new(font: &str, font_size: u32) -> Self {
         let font = Rc::new(sfml::graphics::Font::from_file(font).unwrap());
-        return Gui { components: Vec::with_capacity(10), colorscheme: Colorscheme::new("default", 200), font, font_size, last_mouse_state: (false, false, false), slider_components: Vec::with_capacity(10), label_components: Vec::with_capacity(10) };
+        return Gui { components: Vec::with_capacity(10), colorscheme: Colorscheme::new("default", 200), font, font_size, last_mouse_state: (false, false, false), slider_components: Vec::with_capacity(10), label_components: Vec::with_capacity(10), checkbox_components: Vec::with_capacity(10) };
     }
 
     pub fn update(&mut self, mouse_x: i32, mouse_y: i32, mouse_state: (bool, bool, bool)) {
@@ -35,6 +36,13 @@ impl Gui{
                 if comp.coordinate_inside(mouse_x as f32,  mouse_y as f32) {
                     comp.update(mouse_x as f32);
                     comp.is_dragging = true;
+                }
+            })
+        } 
+        if mouse_state.0 && !self.last_mouse_state.0 {
+            self.checkbox_components.iter_mut().for_each(|comp: &mut Box<Checkbox>| {
+                if comp.coordinate_inside(mouse_x as f32,  mouse_y as f32) {
+                    comp.flip();
                 }
             })
         } 
@@ -58,6 +66,10 @@ impl Gui{
     pub fn add_label(&mut self, x: f32, y: f32, text: String) {
         Label::create(self, x, y, text);
     }
+
+    pub fn add_checkbox(&mut self, x: f32, y: f32) {
+        Checkbox::create(self, x, y);
+    }
 }
 
 impl Drawable for Gui {
@@ -65,6 +77,7 @@ impl Drawable for Gui {
         self.components.iter().for_each(|comp| comp.render(target, states, self));
         self.slider_components.iter().for_each(|comp| comp.render(target, states, self));
         self.label_components.iter().for_each(|comp| comp.render(target, states, self));
+        self.checkbox_components.iter().for_each(|comp| comp.render(target, states, self));
     }
 }
 
@@ -169,6 +182,46 @@ impl GuiComponent for Slider {
 
     fn coordinate_inside(&self, x: f32, y: f32) -> bool {
         if x > self.pos_x && x < self.pos_x + self.length && y > self.pos_y && y < self.pos_y + 10.0 {
+            return true;
+        }
+        false
+    }
+}
+
+pub struct Checkbox {
+    pos_x: f32,
+    pos_y: f32,
+    pub state: bool,
+}
+
+impl Checkbox {
+    pub fn create(gui: &mut Gui, x: f32, y: f32) {
+        let checkbox = Box::new(Checkbox{pos_x: x, pos_y: y, state: false});
+        gui.checkbox_components.push(checkbox);
+    }
+
+    pub fn flip(&mut self) {
+        self.state = !self.state;
+    }
+}
+
+impl GuiComponent for Checkbox {
+    fn render<'a: 'shader, 'texture, 'shader, 'shader_texture>(&'a self, target: &mut dyn sfml::graphics::RenderTarget, _states: &sfml::graphics::RenderStates<'texture, 'shader, 'shader_texture>, gui: &Gui) {
+        let mut cb: RectangleShape = RectangleShape::new();
+        cb.set_position(Vector2f::new(self.pos_x, self.pos_y));
+        cb.set_size(Vector2f::new(20.0, 20.0));
+        let color = match self.state {
+            true => Color::GREEN,
+            false => gui.colorscheme.sfml_color(ColorSchemeNames::Fill),
+        };
+        cb.set_fill_color(color);
+        cb.set_outline_color(gui.colorscheme.sfml_color(ColorSchemeNames::Outline));
+        cb.set_outline_thickness(1.0);
+        target.draw(&cb);
+    }
+
+    fn coordinate_inside(&self, x: f32, y: f32) -> bool {
+        if x > self.pos_x && x < self.pos_x + 20.0 && y > self.pos_y && y < self.pos_y + 20.0 {
             return true;
         }
         false
